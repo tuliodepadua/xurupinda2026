@@ -1,0 +1,207 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ========================================
+// ENUMS
+// ========================================
+
+enum Role {
+  MASTER  // Usuário mestre do sistema
+  ADMIN   // Representante de empresa
+  MANAGER // Gestor da empresa
+  CLIENT  // Cliente final (apenas leitura)
+}
+
+enum Permission {
+  NONE  // Sem acesso
+  READ  // Apenas visualização
+  WRITE // Leitura + escrita
+  ADMIN // Acesso total ao módulo
+}
+
+enum ModuleType {
+  FINANCIAL       // Módulo financeiro
+  INVENTORY       // Estoque/inventário
+  SALES           // Vendas
+  REPORTS         // Relatórios
+  USER_MANAGEMENT // Gestão de usuários
+  SETTINGS        // Configurações
+  SCHEDULES       // Agendamentos
+  IMAGES          // Galeria de imagens
+}
+
+// ========================================
+// MODULES (Módulos Globais do Sistema)
+// ========================================
+
+model Module {
+  id          String     @id @default(cuid())
+  name        String     @unique // Nome do módulo (ex: "Financeiro")
+  slug        String     @unique // Slug para identificação (ex: "financial")
+  type        ModuleType @unique // Tipo do módulo (enum)
+  description String?              // Descrição do módulo
+  icon        String?              // Ícone do módulo
+  order       Int        @default(0) // Ordem de exibição
+  isActive    Boolean    @default(true) // Se o módulo está ativo no sistema
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  companyModules CompanyModule[]
+  
+  @@index([type])
+  @@index([isActive])
+  @@map("modules")
+}
+
+// ========================================
+// COMPANIES (Empresas)
+// ========================================
+
+model Company {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  email     String?
+  phone     String?
+  
+  // Soft delete
+  deletedAt DateTime?
+  
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  
+  // Relations
+  users          User[]
+  companyModules CompanyModule[]
+  
+  @@index([deletedAt])
+  @@index([slug])
+  @@map("companies")
+}
+
+// ========================================
+// USERS (Usuários)
+// ========================================
+
+model User {
+  id       String  @id @default(cuid())
+  email    String  @unique
+  password String
+  name     String
+  role     Role    @default(CLIENT)
+  
+  // Multi-tenant (nullable para usuários MASTER)
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  // Soft delete
+  deletedAt DateTime?
+  
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  
+  // Relations
+  userModulePermissions UserModulePermission[]
+  refreshTokens         RefreshToken[]
+  
+  @@index([companyId])
+  @@index([email, deletedAt])
+  @@index([role])
+  @@map("users")
+}
+
+// ========================================
+// REFRESH TOKENS (Para autenticação)
+// ========================================
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+// ========================================
+// COMPANY MODULES (Módulos Habilitados por Empresa)
+// ========================================
+
+model CompanyModule {
+  id       String  @id @default(cuid())
+  companyId String
+  moduleId  String
+  isEnabled Boolean @default(true)
+  
+  // Permissão padrão para a empresa neste módulo
+  defaultPermission Permission @default(NONE)
+  
+  // Soft delete (desabilitação)
+  deletedAt DateTime?
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  company               Company                @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  module                Module                 @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  userModulePermissions UserModulePermission[]
+  
+  @@unique([companyId, moduleId], name: "company_module_unique")
+  @@index([companyId, isEnabled])
+  @@index([moduleId])
+  @@index([deletedAt])
+  @@map("company_modules")
+}
+
+// ========================================
+// USER MODULE PERMISSIONS (Permissões Granulares por Usuário)
+// ========================================
+
+model UserModulePermission {
+  id              String     @id @default(cuid())
+  userId          String
+  companyModuleId String
+  permission      Permission @default(NONE)
+  
+  // Soft delete
+  deletedAt DateTime?
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyModule CompanyModule @relation(fields: [companyModuleId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, companyModuleId], name: "user_module_permission_unique")
+  @@index([userId])
+  @@index([companyModuleId])
+  @@index([permission])
+  @@index([deletedAt])
+  @@map("user_module_permissions")
+}
