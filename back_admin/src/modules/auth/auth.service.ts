@@ -42,6 +42,11 @@ export class AuthService {
         password: true,
         role: true,
         companyId: true,
+        company: {
+          select: {
+            slug: true,
+          },
+        },
       },
     });
 
@@ -74,6 +79,7 @@ export class AuthService {
       name: user.name,
       role: user.role as any,
       companyId: user.companyId,
+      companySlug: user.company?.slug || null,
     });
   }
 
@@ -95,6 +101,11 @@ export class AuthService {
             role: true,
             companyId: true,
             deletedAt: true,
+            company: {
+              select: {
+                slug: true,
+              },
+            },
           },
         },
       },
@@ -136,6 +147,7 @@ export class AuthService {
         name: refreshToken.user.name,
         role: refreshToken.user.role as any,
         companyId: refreshToken.user.companyId,
+        companySlug: refreshToken.user.company?.slug || null,
       },
     );
   }
@@ -159,12 +171,14 @@ export class AuthService {
     email: string;
     role: any;
     companyId: string | null;
+    company?: { slug: string } | null;
   }): Promise<string> {
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
       role: user.role,
       companyId: user.companyId,
+      companySlug: user.company?.slug || null,
     };
 
     return this.jwtService.signAsync(payload as any);

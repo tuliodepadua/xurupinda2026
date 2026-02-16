@@ -38,6 +38,7 @@ export class TokenResponseDto {
     name: string;
     role: Role;
     companyId: string | null;
+    companySlug: string | null;
   };
 
   constructor(
@@ -50,6 +51,7 @@ export class TokenResponseDto {
       name: string;
       role: Role;
       companyId: string | null;
+      companySlug: string | null;
     },
   ) {
     this.accessToken = accessToken;

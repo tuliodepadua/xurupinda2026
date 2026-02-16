@@ -22,6 +22,17 @@ export interface AuthUser {
   name: string;
   email: string;
   role: Role;
-  companyId: string;
+  companyId?: string; // Opcional para MASTER
+  companies?: string[]; // Array de IDs de companies (para futuro suporte multi-company)
   permissions: UserPermission[];
+}
+
+export interface Company {
+  id: string;
+  name: string;
+  slug: string;
+  email?: string;
+  phone?: string;
+  createdAt: string;
+  updatedAt: string;
 }

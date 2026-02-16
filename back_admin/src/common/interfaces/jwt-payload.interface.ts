@@ -27,6 +27,12 @@ export interface JwtPayload {
   companyId: string | null;
 
   /**
+   * Slug da empresa (tenant) do usuário
+   * null para usuários MASTER
+   */
+  companySlug: string | null;
+
+  /**
    * Timestamp de emissão do token
    */
   iat?: number;

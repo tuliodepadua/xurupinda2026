@@ -7,6 +7,8 @@ interface UserData {
   name: string;
   role: "MASTER" | "ADMIN" | "MANAGER" | "CLIENT";
   companyId?: string;
+  companySlug?: string;
+  companies?: string[]; // Array de IDs de companies
 }
 
 declare module "next-auth" {
@@ -22,6 +24,7 @@ declare module "next-auth" {
     name: string;
     role: "MASTER" | "ADMIN" | "MANAGER" | "CLIENT";
     companyId?: string;
+    companySlug?: string;
     accessToken: string;
     refreshToken: string;
     accessTokenExpires: number;
