@@ -14,6 +14,7 @@ import {
   X,
   ChevronLeft,
   LayoutDashboard,
+  ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { signOut, useSession } from "next-auth/react";
@@ -23,7 +24,8 @@ interface SidebarProps {
   setIsOpen: (isOpen: boolean) => void;
 }
 
-const menuItems = [
+// Menu items para gestão global
+const globalMenuItems = [
   { icon: Home, label: "Dashboard", href: "/admin" },
   { icon: Building2, label: "Empresas", href: "/admin/companies" },
   { icon: Users, label: "Usuários", href: "/admin/users" },
@@ -31,10 +33,34 @@ const menuItems = [
   { icon: Settings, label: "Configurações", href: "/admin/settings" },
 ];
 
+// Menu items para gestão de empresa específica
+const companyMenuItems = (companySlug: string) => [
+  { icon: LayoutDashboard, label: "Dashboard", href: `/admin/${companySlug}` },
+  { icon: Users, label: "Usuários", href: `/admin/${companySlug}/users` },
+  { icon: Package, label: "Módulos", href: `/admin/${companySlug}/modules` },
+  {
+    icon: Settings,
+    label: "Configurações",
+    href: `/admin/${companySlug}/settings`,
+  },
+];
+
 export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Detectar se estamos em contexto de empresa específica
+  const companySlugMatch = pathname.match(/^\/admin\/([^\/]+)(?:\/|$)/);
+  const isGlobalRoute =
+    !companySlugMatch ||
+    ["companies", "users", "modules", "settings"].includes(companySlugMatch[1]);
+  const companySlug = !isGlobalRoute ? companySlugMatch[1] : null;
+
+  // Selecionar menu items baseado no contexto
+  const menuItems = companySlug
+    ? companyMenuItems(companySlug)
+    : globalMenuItems;
 
   return (
     <>
@@ -86,6 +112,28 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
             <X className='h-5 w-5' />
           </Button>
         </div>
+
+        {/* Company Context Header */}
+        {companySlug && !isCollapsed && (
+          <div className='border-b border-slate-200 p-3'>
+            <Link
+              href='/admin/companies'
+              className='flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 transition-colors'
+            >
+              <ArrowLeft className='h-4 w-4' />
+              <span>Voltar para gestão global</span>
+            </Link>
+            <div className='mt-2 flex items-center gap-2'>
+              <Building2 className='h-5 w-5 text-slate-700' />
+              <div>
+                <p className='text-xs text-slate-500'>Empresa</p>
+                <p className='text-sm font-semibold text-slate-900 capitalize'>
+                  {companySlug.replace(/-/g, " ")}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Navigation */}
         <nav className='flex-1 space-y-1 p-3 overflow-y-auto'>

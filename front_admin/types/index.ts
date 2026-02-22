@@ -36,3 +36,15 @@ export interface Company {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: Role;
+  companyId?: string;
+  companyName?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
